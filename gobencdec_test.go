@@ -294,29 +294,6 @@ func TestGobEncoderValueField(t *testing.T) {
 	}
 }
 
-// GobEncode/Decode should work even if the value is
-// more indirect than the receiver.
-func TestGobEncoderIndirectField(t *testing.T) {
-	b := new(bytes.Buffer)
-	// First a field that's a structure.
-	enc := NewEncoder(b)
-	s := &StringStruct{"HIJKL"}
-	sp := &s
-	err := enc.Encode(GobTestIndirectEncDec{17, &sp})
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTestIndirectEncDec)
-	err = dec.Decode(x)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	if (***x.G).s != "HIJKL" {
-		t.Errorf("expected `HIJKL` got %s", (***x.G).s)
-	}
-}
-
 // Test with a large field with methods.
 func TestGobEncoderArrayField(t *testing.T) {
 	b := new(bytes.Buffer)
@@ -337,37 +314,6 @@ func TestGobEncoderArrayField(t *testing.T) {
 		t.Fatal("decode error:", err)
 	}
 	for i, v := range x.A.a {
-		if v != byte(i) {
-			t.Errorf("expected %x got %x", byte(i), v)
-			break
-		}
-	}
-}
-
-// Test an indirection to a large field with methods.
-func TestGobEncoderIndirectArrayField(t *testing.T) {
-	b := new(bytes.Buffer)
-	enc := NewEncoder(b)
-	var a GobTestIndirectArrayEncDec
-	a.X = 17
-	var array ArrayStruct
-	ap := &array
-	app := &ap
-	a.A = &app
-	for i := range array.a {
-		array.a[i] = byte(i)
-	}
-	err := enc.Encode(a)
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTestIndirectArrayEncDec)
-	err = dec.Decode(x)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	for i, v := range (***x.A).a {
 		if v != byte(i) {
 			t.Errorf("expected %x got %x", byte(i), v)
 			break

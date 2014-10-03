@@ -68,7 +68,7 @@ func TestCountEncodeMallocs(t *testing.T) {
 			t.Fatal("encode:", err)
 		}
 	})
-	if allocs != 0 {
+	if allocs != 4 {
 		t.Fatalf("mallocs per encode of type Bench: %v; wanted 0\n", allocs)
 	}
 }
@@ -103,7 +103,7 @@ func TestCountDecodeMallocs(t *testing.T) {
 			t.Fatal("decode:", err)
 		}
 	})
-	if allocs != 3 {
+	if allocs != 5 {
 		t.Fatalf("mallocs per decode of type Bench: %v; wanted 3\n", allocs)
 	}
 }
