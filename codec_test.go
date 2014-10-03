@@ -1467,6 +1467,11 @@ func testFuzz(t *testing.T, seed int64, n int, input ...interface{}) {
 // TestFuzzOneByte tries to decode corrupted input sequences
 // and checks that no panic occurs.
 func TestFuzzOneByte(t *testing.T) {
+	if !*doFuzzTests {
+		t.Logf("disabled; run with -gob.fuzz to enable")
+		return
+	}
+
 	buf := new(bytes.Buffer)
 	Register(OnTheFly{})
 	dt := newDT()

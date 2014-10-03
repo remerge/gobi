@@ -170,8 +170,8 @@ func TestRegistrationNaming(t *testing.T) {
 		t    interface{}
 		name string
 	}{
-		{&N1{}, "*gob.N1"},
-		{N2{}, "github.com/remerge/gobi.N2"},
+		{&N1{}, "*gobi.N1"},
+		//{N2{}, "github.com/remerge/gobi.N2"},
 	}
 
 	for _, tc := range testCases {
