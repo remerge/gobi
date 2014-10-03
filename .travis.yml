@@ -1,0 +1,14 @@
+language: go
+go:
+- 1.3.1
+- tip
+env:
+- PATH=$HOME/gopath/bin:$PATH
+script:
+- make dep
+- make build
+- make test
+notifications:
+  email: false
+  slack:
+    secure: lRQMcA62YsJLYeT7imoziT+h144roqBJRg+Tb7qGRi6T9j9Dt5rzBxBOoT68lRvyz+XoSEYLyRPAhSWcek0Xt+LnReNUNylGIZz0eooNx+rn7hg/hTl++cCLJTkFgd9Ua3RVRi7QL+Jb+Mg+mrZxaG7Nll/g7Lcf7J9zXa1M76Q=
