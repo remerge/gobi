@@ -248,7 +248,7 @@ be predefined or be defined before the value in the stream.
 See "Gobs of data" for a design discussion of the gob wire format:
 http://golang.org/doc/articles/gobs_of_data.html
 */
-package gob
+package gobi
 
 /*
 Grammar:

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package gob
+package gobi
 
 // TODO(rsc): When garbage collector changes, revisit
 // the allocations in this file that use unsafe.Pointer.

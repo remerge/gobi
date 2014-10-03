@@ -6,11 +6,11 @@
 
 package main
 
-// Need to compile package gob with debug.go to build this program.
+// Need to compile package gobi with debug.go to build this program.
 // See comments in debug.go for how to do this.
 
 import (
-	"encoding/gob"
+	"github.com/remerge/gobi"
 	"fmt"
 	"os"
 )
