@@ -53,6 +53,7 @@ func (enc *Encoder) freeEncoderState(e *encoderState) {
 
 // encodeUint writes an encoded unsigned integer to state.b.
 func (state *encoderState) encodeUint(x uint64) {
+	Printf("encode uint %d(%x)\n", x, x)
 	if x <= 0x7F {
 		err := state.b.WriteByte(uint8(x))
 		if err != nil {
@@ -77,6 +78,7 @@ func (state *encoderState) encodeUint(x uint64) {
 // The low bit of the encoding says whether to bit complement the (other bits of the)
 // uint to recover the int.
 func (state *encoderState) encodeInt(i int64) {
+	Printf("encode int %d(%x)\n", i, i)
 	var x uint64
 	if i < 0 {
 		x = uint64(^i<<1) | 1
@@ -117,9 +119,12 @@ func (state *encoderState) update(instr *encInstr) {
 
 // encIndirect dereferences p indir times and returns the result.
 func encIndirect(p unsafe.Pointer, indir int) unsafe.Pointer {
+	Printf("encIndirect indir=%d\n", indir)
 	for ; indir > 0; indir-- {
+		Printf("  deref[%d] %x to %x\n", indir, p, *(*unsafe.Pointer)(p))
 		p = *(*unsafe.Pointer)(p)
 		if p == nil {
+			Printf("  is nil\n")
 			return unsafe.Pointer(nil)
 		}
 	}
@@ -129,6 +134,8 @@ func encIndirect(p unsafe.Pointer, indir int) unsafe.Pointer {
 // encBool encodes the bool with address p as an unsigned 0 or 1.
 func encBool(i *encInstr, state *encoderState, p unsafe.Pointer) {
 	b := *(*bool)(p)
+	Printf("encode bool\n")
+
 	if b || state.sendZero {
 		state.update(i)
 		if b {
@@ -142,6 +149,7 @@ func encBool(i *encInstr, state *encoderState, p unsafe.Pointer) {
 // encInt encodes the int with address p.
 func encInt(i *encInstr, state *encoderState, p unsafe.Pointer) {
 	v := int64(*(*int)(p))
+	Printf("encode int=%d\n", v)
 	if v != 0 || state.sendZero {
 		state.update(i)
 		state.encodeInt(v)
@@ -151,6 +159,8 @@ func encInt(i *encInstr, state *encoderState, p unsafe.Pointer) {
 // encUint encodes the uint with address p.
 func encUint(i *encInstr, state *encoderState, p unsafe.Pointer) {
 	v := uint64(*(*uint)(p))
+	Printf("encode uint=%d\n", v)
+
 	if v != 0 || state.sendZero {
 		state.update(i)
 		state.encodeUint(v)
@@ -223,6 +233,7 @@ func encInt64(i *encInstr, state *encoderState, p unsafe.Pointer) {
 // encInt64 encodes the uint64 with address p.
 func encUint64(i *encInstr, state *encoderState, p unsafe.Pointer) {
 	v := *(*uint64)(p)
+	Printf("encode uint64=%d\n", v)
 	if v != 0 || state.sendZero {
 		state.update(i)
 		state.encodeUint(v)
@@ -232,6 +243,8 @@ func encUint64(i *encInstr, state *encoderState, p unsafe.Pointer) {
 // encUintptr encodes the uintptr with address p.
 func encUintptr(i *encInstr, state *encoderState, p unsafe.Pointer) {
 	v := uint64(*(*uintptr)(p))
+	Printf("encode uintptr: %x\n", v)
+
 	if v != 0 || state.sendZero {
 		state.update(i)
 		state.encodeUint(v)
@@ -267,7 +280,10 @@ func encFloat32(i *encInstr, state *encoderState, p unsafe.Pointer) {
 
 // encFloat64 encodes the float64 with address p.
 func encFloat64(i *encInstr, state *encoderState, p unsafe.Pointer) {
+
 	f := *(*float64)(p)
+	Printf("encode float64 %f(%x)\n", f, p)
+
 	if f != 0 || state.sendZero {
 		state.update(i)
 		v := floatBits(f)
@@ -304,6 +320,7 @@ func encComplex128(i *encInstr, state *encoderState, p unsafe.Pointer) {
 // Byte arrays are encoded as an unsigned count followed by the raw bytes.
 func encUint8Array(i *encInstr, state *encoderState, p unsafe.Pointer) {
 	b := *(*[]byte)(p)
+	Printf("encode Uint8Array\n")
 	if len(b) > 0 || state.sendZero {
 		state.update(i)
 		state.encodeUint(uint64(len(b)))
@@ -315,6 +332,7 @@ func encUint8Array(i *encInstr, state *encoderState, p unsafe.Pointer) {
 // Strings are encoded as an unsigned count followed by the raw bytes.
 func encString(i *encInstr, state *encoderState, p unsafe.Pointer) {
 	s := *(*string)(p)
+	Printf("encode string: %s\n", s)
 	if len(s) > 0 || state.sendZero {
 		state.update(i)
 		state.encodeUint(uint64(len(s)))
@@ -325,6 +343,8 @@ func encString(i *encInstr, state *encoderState, p unsafe.Pointer) {
 // encStructTerminator encodes the end of an encoded struct
 // as delta field number of 0.
 func encStructTerminator(i *encInstr, state *encoderState, p unsafe.Pointer) {
+	Printf("encode terminator\n")
+
 	state.encodeUint(0)
 }
 
@@ -340,6 +360,12 @@ const singletonField = 0
 
 // encodeSingle encodes a single top-level non-struct value.
 func (enc *Encoder) encodeSingle(b *bytes.Buffer, engine *encEngine, basep unsafe.Pointer) {
+	Printf("encodeSingle\n")
+	indent++
+	defer func() {
+		indent--
+	}()
+
 	state := enc.newEncoderState(b)
 	state.fieldnum = singletonField
 	// There is no surrounding struct to frame the transmission, so we must
@@ -348,6 +374,7 @@ func (enc *Encoder) encodeSingle(b *bytes.Buffer, engine *encEngine, basep unsaf
 	instr := &engine.instr[singletonField]
 	p := basep // offset will be zero
 	if instr.indir > 0 {
+		// lets remember that for later
 		if p = encIndirect(p, instr.indir); p == nil {
 			return
 		}
@@ -358,28 +385,75 @@ func (enc *Encoder) encodeSingle(b *bytes.Buffer, engine *encEngine, basep unsaf
 
 // encodeStruct encodes a single struct value.
 func (enc *Encoder) encodeStruct(b *bytes.Buffer, engine *encEngine, basep unsafe.Pointer) {
+	Printf("encodeStruct ops=%d\n", len(engine.instr))
+	indent++
+	defer func() {
+		indent--
+	}()
 	state := enc.newEncoderState(b)
 	state.fieldnum = -1
 	for i := 0; i < len(engine.instr); i++ {
 		instr := &engine.instr[i]
 		p := unsafe.Pointer(uintptr(basep) + instr.offset)
+
+		// check if its in the identity map
+		remembered := false
 		if instr.indir > 0 {
 			if p = encIndirect(p, instr.indir); p == nil {
 				continue
 			}
+
+			up := *(*unsafe.Pointer)(unsafe.Pointer((uintptr(basep) + instr.offset)))
+
+			// up := *(*unsafe.Pointer)(p)
+			if enc.remember[up] {
+				g := (*uint64)(unsafe.Pointer(&up))
+				state.update(instr)
+				//state.encodeUint(*g + 0x100000000000)
+				state.encodeUint(*g)
+				Printf("already see, just add id %x\n", *g)
+				continue
+			}
+
+			Printf("remember.struct %x (%#v)\n", up, p)
+			enc.remember[up] = true
+			remembered = true
+
+			// and write this pointer to the stream!
 		}
-		instr.op(instr, state, p)
+		if remembered {
+			up := *(*unsafe.Pointer)(unsafe.Pointer((uintptr(basep) + instr.offset)))
+			// up := *(*unsafe.Pointer)(p)
+			g := (*uint64)(unsafe.Pointer(&up))
+			// Printf("remEnc %x\n", *g+0x100000000000)
+			Printf("remEnc %x\n", *g)
+			state.update(instr)
+			// state.encodeUint(*g + 0x100000000000)
+			state.encodeUint(*g)
+			instr.op(nil, state, p)
+			// store the pointer
+		} else {
+			instr.op(instr, state, p)
+		}
 	}
 	enc.freeEncoderState(state)
 }
 
 // encodeArray encodes the array whose 0th element is at p.
 func (enc *Encoder) encodeArray(b *bytes.Buffer, p unsafe.Pointer, op encOp, elemWid uintptr, elemIndir int, length int) {
+	Printf("encodeArray\n")
+	indent++
+	defer func() {
+		indent--
+	}()
+
 	state := enc.newEncoderState(b)
 	state.fieldnum = -1
 	state.sendZero = true
 	state.encodeUint(uint64(length))
 	for i := 0; i < length; i++ {
+		remembered := false
+
 		elemp := p
 		if elemIndir > 0 {
 			up := encIndirect(elemp, elemIndir)
@@ -387,8 +461,31 @@ func (enc *Encoder) encodeArray(b *bytes.Buffer, p unsafe.Pointer, op encOp, ele
 				errorf("encodeArray: nil element")
 			}
 			elemp = up
+			tp := *(*unsafe.Pointer)(p)
+			//up := *(*unsafe.Pointer)(unsafe.Pointer((uintptr(basep) + instr.offset)))
+			if enc.remember[tp] {
+				g := (*uint64)(unsafe.Pointer(&tp))
+				state.encodeUint(*g)
+				Printf("already see, just add id %x\n", *g)
+				p = unsafe.Pointer(uintptr(p) + elemWid)
+				continue
+			}
+			Printf("remember.array %x\n", tp)
+			enc.remember[tp] = true
+			remembered = true
 		}
+		tp := *(*unsafe.Pointer)(p)
+		g := (*uint64)(unsafe.Pointer(&tp))
+		if remembered {
+			Printf("remEncArray %x\n", *g)
+			state.encodeUint(*g)
+			//	op(nil, state, elemp)
+			// store the pointer
+		} //else {
+		// state.encodeUint(*g)
 		op(nil, state, elemp)
+		//}
+
 		p = unsafe.Pointer(uintptr(p) + elemWid)
 	}
 	enc.freeEncoderState(state)
@@ -405,18 +502,48 @@ func encodeReflectValue(state *encoderState, v reflect.Value, op encOp, indir in
 	op(nil, state, unsafeAddr(v))
 }
 
+func (enc *Encoder) encodeReflectValue(state *encoderState, v reflect.Value, op encOp, indir int) {
+	if indir > 0 && v.IsValid() {
+		up := *(*unsafe.Pointer)(unsafeAddr(v))
+		if enc.remember[up] {
+			g := (*uint64)(unsafe.Pointer(&up))
+			state.encodeUint(*g)
+			Printf("already see, just add id %x\n", *g)
+			return
+		}
+		enc.remember[up] = true
+		g := (*uint64)(unsafe.Pointer(&up))
+		Printf("remember.map %x %s\n", *g, v)
+		state.encodeUint(*g)
+	}
+
+	for i := 0; i < indir && v.IsValid(); i++ {
+		v = reflect.Indirect(v)
+	}
+	if !v.IsValid() {
+		errorf("encodeReflectValue: nil element")
+	}
+	op(nil, state, unsafeAddr(v))
+}
+
 // encodeMap encodes a map as unsigned count followed by key:value pairs.
 // Because map internals are not exposed, we must use reflection rather than
 // addresses.
 func (enc *Encoder) encodeMap(b *bytes.Buffer, mv reflect.Value, keyOp, elemOp encOp, keyIndir, elemIndir int) {
+	Printf("encodeMap %s\n", mv.Type())
+	indent++
+	defer func() {
+		indent--
+	}()
+
 	state := enc.newEncoderState(b)
 	state.fieldnum = -1
 	state.sendZero = true
 	keys := mv.MapKeys()
 	state.encodeUint(uint64(len(keys)))
 	for _, key := range keys {
-		encodeReflectValue(state, key, keyOp, keyIndir)
-		encodeReflectValue(state, mv.MapIndex(key), elemOp, elemIndir)
+		enc.encodeReflectValue(state, key, keyOp, keyIndir)
+		enc.encodeReflectValue(state, mv.MapIndex(key), elemOp, elemIndir)
 	}
 	enc.freeEncoderState(state)
 }
@@ -427,6 +554,12 @@ func (enc *Encoder) encodeMap(b *bytes.Buffer, mv reflect.Value, keyOp, elemOp e
 // by the concrete value.  A nil value gets sent as the empty string for the name,
 // followed by no value.
 func (enc *Encoder) encodeInterface(b *bytes.Buffer, iv reflect.Value) {
+	Printf("encodeInterface\n")
+	indent++
+	defer func() {
+		indent--
+	}()
+
 	// Gobs can encode nil interface values but not typed interface
 	// values holding nil pointers, since nil pointers point to no value.
 	elem := iv.Elem()
@@ -562,6 +695,7 @@ func (enc *Encoder) encOpFor(rt reflect.Type, inProgress map[reflect.Type]*encOp
 	ut := userType(rt)
 	// If the type implements GobEncoder, we handle it without further processing.
 	if ut.externalEnc != 0 {
+		Printf("use external encoder for %s", ut.user)
 		return enc.gobEncodeOpFor(ut)
 	}
 	// If this type is already in progress, it's a recursive type (e.g. map[string]*T).
@@ -746,6 +880,7 @@ func (enc *Encoder) encode(b *bytes.Buffer, value reflect.Value, ut *userTypeInf
 	defer catchError(&enc.err)
 	engine := enc.lockAndGetEncEngine(ut)
 	indir := ut.indir
+	Printf("encode indir=%d external=%d\n", ut.encIndir, ut.externalEnc)
 	if ut.externalEnc != 0 {
 		indir = int(ut.encIndir)
 	}

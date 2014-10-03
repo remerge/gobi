@@ -10,8 +10,8 @@ package main
 // See comments in debug.go for how to do this.
 
 import (
-	"github.com/remerge/gobi"
 	"fmt"
+	"github.com/remerge/gobi"
 	"os"
 )
 

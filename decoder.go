@@ -11,6 +11,7 @@ import (
 	"io"
 	"reflect"
 	"sync"
+	"unsafe"
 )
 
 // A Decoder manages the receipt of type and data information read from the
@@ -26,6 +27,7 @@ type Decoder struct {
 	countBuf     []byte                                  // used for decoding integers while parsing messages
 	tmp          []byte                                  // temporary storage for i/o; saves reallocating
 	err          error
+	identity     map[uint64]unsafe.Pointer
 }
 
 // NewDecoder returns a new decoder that reads from the io.Reader.
@@ -154,6 +156,7 @@ func (dec *Decoder) nextUint() uint64 {
 // decoded.  If this is an interface value, it can be ignored by
 // resetting that buffer.
 func (dec *Decoder) decodeTypeSequence(isInterface bool) typeId {
+	Printf("decodeTypeSequence\n")
 	for dec.err == nil {
 		if dec.buf.Len() == 0 {
 			if !dec.recvMessage() {
@@ -221,7 +224,7 @@ func (dec *Decoder) DecodeValue(v reflect.Value) error {
 	// Make sure we're single-threaded through here.
 	dec.mutex.Lock()
 	defer dec.mutex.Unlock()
-
+	dec.identity = make(map[uint64]unsafe.Pointer)
 	dec.buf.Reset() // In case data lingers from previous invocation.
 	dec.err = nil
 	id := dec.decodeTypeSequence(false)

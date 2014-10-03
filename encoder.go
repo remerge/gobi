@@ -9,6 +9,7 @@ import (
 	"io"
 	"reflect"
 	"sync"
+	"unsafe"
 )
 
 // An Encoder manages the transmission of type and data information to the
@@ -21,6 +22,7 @@ type Encoder struct {
 	freeList   *encoderState           // list of free encoderStates; avoids reallocation
 	byteBuf    bytes.Buffer            // buffer for top-level encoderState
 	err        error
+	remember   map[unsafe.Pointer]bool // remember set
 }
 
 // Before we encode a message, we reserve space at the head of the
@@ -212,6 +214,7 @@ func (enc *Encoder) sendTypeId(state *encoderState, ut *userTypeInfo) {
 // EncodeValue transmits the data item represented by the reflection value,
 // guaranteeing that all necessary type information has been transmitted first.
 func (enc *Encoder) EncodeValue(value reflect.Value) error {
+	Printf("EncodeValue %s\n", value)
 	// Gobs contain values. They cannot represent nil pointers, which
 	// have no value to encode.
 	if value.Kind() == reflect.Ptr && value.IsNil() {
@@ -231,11 +234,11 @@ func (enc *Encoder) EncodeValue(value reflect.Value) error {
 		return err
 	}
 
+	enc.remember = make(map[unsafe.Pointer]bool)
 	enc.err = nil
 	enc.byteBuf.Reset()
 	enc.byteBuf.Write(spaceForLength)
 	state := enc.newEncoderState(&enc.byteBuf)
-
 	enc.sendTypeDescriptor(enc.writer(), state, ut)
 	enc.sendTypeId(state, ut)
 	if enc.err != nil {
@@ -243,11 +246,14 @@ func (enc *Encoder) EncodeValue(value reflect.Value) error {
 	}
 
 	// Encode the object.
+	Printf("encode object %s\n", value)
+
 	enc.encode(state.b, value, ut)
 	if enc.err == nil {
 		enc.writeMessage(enc.writer(), state.b)
 	}
 
 	enc.freeEncoderState(state)
+
 	return enc.err
 }

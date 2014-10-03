@@ -345,7 +345,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a bool
 		}
-		instr := &decInstr{decBool, 6, 0, 0, ovfl}
+		instr := &decInstr{decBool, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(boolResult)
 		execDec("bool", instr, state, t, unsafe.Pointer(&data))
 		if data.a != true {
@@ -357,7 +357,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a int
 		}
-		instr := &decInstr{decOpTable[reflect.Int], 6, 0, 0, ovfl}
+		instr := &decInstr{decOpTable[reflect.Int], 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(signedResult)
 		execDec("int", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -370,7 +370,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a uint
 		}
-		instr := &decInstr{decOpTable[reflect.Uint], 6, 0, 0, ovfl}
+		instr := &decInstr{decOpTable[reflect.Uint], 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(unsignedResult)
 		execDec("uint", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -383,7 +383,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a int8
 		}
-		instr := &decInstr{decInt8, 6, 0, 0, ovfl}
+		instr := &decInstr{decInt8, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(signedResult)
 		execDec("int8", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -396,7 +396,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a uint8
 		}
-		instr := &decInstr{decUint8, 6, 0, 0, ovfl}
+		instr := &decInstr{decUint8, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(unsignedResult)
 		execDec("uint8", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -409,7 +409,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a int16
 		}
-		instr := &decInstr{decInt16, 6, 0, 0, ovfl}
+		instr := &decInstr{decInt16, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(signedResult)
 		execDec("int16", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -422,7 +422,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a uint16
 		}
-		instr := &decInstr{decUint16, 6, 0, 0, ovfl}
+		instr := &decInstr{decUint16, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(unsignedResult)
 		execDec("uint16", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -435,7 +435,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a int32
 		}
-		instr := &decInstr{decInt32, 6, 0, 0, ovfl}
+		instr := &decInstr{decInt32, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(signedResult)
 		execDec("int32", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -448,7 +448,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a uint32
 		}
-		instr := &decInstr{decUint32, 6, 0, 0, ovfl}
+		instr := &decInstr{decUint32, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(unsignedResult)
 		execDec("uint32", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -461,7 +461,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a uintptr
 		}
-		instr := &decInstr{decOpTable[reflect.Uintptr], 6, 0, 0, ovfl}
+		instr := &decInstr{decOpTable[reflect.Uintptr], 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(unsignedResult)
 		execDec("uintptr", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -474,7 +474,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a int64
 		}
-		instr := &decInstr{decInt64, 6, 0, 0, ovfl}
+		instr := &decInstr{decInt64, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(signedResult)
 		execDec("int64", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -487,7 +487,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a uint64
 		}
-		instr := &decInstr{decUint64, 6, 0, 0, ovfl}
+		instr := &decInstr{decUint64, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(unsignedResult)
 		execDec("uint64", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -500,7 +500,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a float32
 		}
-		instr := &decInstr{decFloat32, 6, 0, 0, ovfl}
+		instr := &decInstr{decFloat32, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(floatResult)
 		execDec("float32", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -513,7 +513,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a float64
 		}
-		instr := &decInstr{decFloat64, 6, 0, 0, ovfl}
+		instr := &decInstr{decFloat64, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(floatResult)
 		execDec("float64", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17 {
@@ -526,7 +526,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a complex64
 		}
-		instr := &decInstr{decOpTable[reflect.Complex64], 6, 0, 0, ovfl}
+		instr := &decInstr{decOpTable[reflect.Complex64], 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(complexResult)
 		execDec("complex", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17+19i {
@@ -539,7 +539,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a complex128
 		}
-		instr := &decInstr{decOpTable[reflect.Complex128], 6, 0, 0, ovfl}
+		instr := &decInstr{decOpTable[reflect.Complex128], 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(complexResult)
 		execDec("complex", instr, state, t, unsafe.Pointer(&data))
 		if data.a != 17+19i {
@@ -552,7 +552,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a []byte
 		}
-		instr := &decInstr{decUint8Slice, 6, 0, 0, ovfl}
+		instr := &decInstr{decUint8Slice, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(bytesResult)
 		execDec("bytes", instr, state, t, unsafe.Pointer(&data))
 		if string(data.a) != "hello" {
@@ -565,7 +565,7 @@ func TestScalarDecInstructions(t *testing.T) {
 		var data struct {
 			a string
 		}
-		instr := &decInstr{decString, 6, 0, 0, ovfl}
+		instr := &decInstr{decString, 6, 0, 0, ovfl, false}
 		state := newDecodeStateFromData(bytesResult)
 		execDec("bytes", instr, state, t, unsafe.Pointer(&data))
 		if data.a != "hello" {
