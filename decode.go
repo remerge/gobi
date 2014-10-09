@@ -652,12 +652,13 @@ func (dec *Decoder) decodeArrayHelper(state *decoderState, p unsafe.Pointer, ele
 		if elemIndir > 1 {
 			up = decIndirect(up, elemIndir)
 		}
-		elemOp(instr, state, up)
 
 		if id != 0 {
 			Printf("new array identity entry %x \n", id)
 			dec.identity[id] = p
 		}
+
+		elemOp(instr, state, up)
 
 		p = unsafe.Pointer(uintptr(p) + elemWid)
 	}
