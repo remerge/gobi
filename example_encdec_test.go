@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/remerge/gobi"
+	gob "github.com/remerge/gobi"
 )
 
 // The Vector type has unexported fields, which the package cannot access.
@@ -42,14 +42,14 @@ func Example_encodeDecode() {
 	var network bytes.Buffer // Stand-in for the network.
 
 	// Create an encoder and send a value.
-	enc := gobi.NewEncoder(&network)
+	enc := gob.NewEncoder(&network)
 	err := enc.Encode(Vector{3, 4, 5})
 	if err != nil {
 		log.Fatal("encode:", err)
 	}
 
 	// Create a decoder and receive a value.
-	dec := gobi.NewDecoder(&network)
+	dec := gob.NewDecoder(&network)
 	var v Vector
 	err = dec.Decode(&v)
 	if err != nil {

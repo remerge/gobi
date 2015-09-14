@@ -11,8 +11,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/remerge/gobi"
 	"os"
+
+	gob "github.com/remerge/gobi"
 )
 
 func main() {
