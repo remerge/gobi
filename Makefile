@@ -5,28 +5,37 @@ TOP := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
 GOOP=goop
 GO=$(GOOP) exec go
-GOFMT=gofmt -w
+GOFMT=gofmt -w -s
 
-SRCS=$(wildcard main/*.go)
-OBJS=$(patsubst main/%.go,%,$(SRCS))
+GOFILES=$(shell git ls-files | grep '\.go$$')
 
-.PHONY: build clean test fmt dep
+.PHONY: build run watch clean test fmt dep
 
 all: build
 
 build: fmt
-	$(GO) build $(SRCS)
+	$(GO) build
+
+install: build
+	$(GO) install $(PACKAGE)
 
 clean:
 	$(GO) clean
-	rm -f $(OBJS)
+	rm -rf $(TOP)/.vendor/
 
-test:
-	go get github.com/smartystreets/goconvey
-	$(GO) test
+lint: install
+	go get github.com/alecthomas/gometalinter
+	gometalinter --install
+	$(GOOP) exec gometalinter -D golint -D gocyclo -D dupl -D errcheck -D deadcode
+
+test: build
+	$(GO) test -v -timeout 60s -race $(PACKAGE)
+
+bench:
+	$(GO) test -bench=. -cpu 4
 
 fmt:
-	$(GOFMT) .
+	$(GOFMT) $(GOFILES)
 
 dep:
 	go get github.com/nitrous-io/goop
