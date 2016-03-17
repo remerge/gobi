@@ -235,7 +235,6 @@ func (deb *debugger) delimitedMessage(indent tab) bool {
 		deb.dump("Delimited message of length %d", n)
 		deb.message(indent)
 	}
-	return true
 }
 
 // loadBlock preps us to read a message

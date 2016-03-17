@@ -36,8 +36,9 @@ type encBuffer struct {
 	scratch [64]byte
 }
 
-func (e *encBuffer) WriteByte(c byte) {
+func (e *encBuffer) WriteByte(c byte) error {
 	e.data = append(e.data, c)
+	return nil
 }
 
 func (e *encBuffer) Write(p []byte) (int, error) {
