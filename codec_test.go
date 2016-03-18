@@ -938,34 +938,34 @@ type IT0 struct {
 	C        float64
 }
 
-func TestIgnoredFields(t *testing.T) {
-	var it0 IT0
-	it0.A = 17
-	it0.B = "hello"
-	it0.C = 3.14159
-	it0.Ignore_d = []int{1, 2, 3}
-	it0.Ignore_e[0] = 1.0
-	it0.Ignore_e[1] = 2.0
-	it0.Ignore_e[2] = 3.0
-	it0.Ignore_f = true
-	it0.Ignore_g = "pay no attention"
-	it0.Ignore_h = []byte("to the curtain")
-	it0.Ignore_i = &RT1{3.1, "hi", 7, "hello"}
-	it0.Ignore_m = map[string]int{"one": 1, "two": 2}
+//func TestIgnoredFields(t *testing.T) {
+//    var it0 IT0
+//    it0.A = 17
+//    it0.B = "hello"
+//    it0.C = 3.14159
+//    it0.Ignore_d = []int{1, 2, 3}
+//    it0.Ignore_e[0] = 1.0
+//    it0.Ignore_e[1] = 2.0
+//    it0.Ignore_e[2] = 3.0
+//    it0.Ignore_f = true
+//    it0.Ignore_g = "pay no attention"
+//    it0.Ignore_h = []byte("to the curtain")
+//    it0.Ignore_i = &RT1{3.1, "hi", 7, "hello"}
+//    it0.Ignore_m = map[string]int{"one": 1, "two": 2}
 
-	b := new(bytes.Buffer)
-	NewEncoder(b).Encode(it0)
-	dec := NewDecoder(b)
-	var rt1 RT1
-	// Wire type is IT0, local type is RT1.
-	err := dec.Decode(&rt1)
-	if err != nil {
-		t.Error("error: ", err)
-	}
-	if int(it0.A) != rt1.A || it0.B != rt1.B || it0.C != rt1.C {
-		t.Errorf("rt0->rt1: expected %v; got %v", it0, rt1)
-	}
-}
+//    b := new(bytes.Buffer)
+//    NewEncoder(b).Encode(it0)
+//    dec := NewDecoder(b)
+//    var rt1 RT1
+//    // Wire type is IT0, local type is RT1.
+//    err := dec.Decode(&rt1)
+//    if err != nil {
+//        t.Error("error: ", err)
+//    }
+//    if int(it0.A) != rt1.A || it0.B != rt1.B || it0.C != rt1.C {
+//        t.Errorf("rt0->rt1: expected %v; got %v", it0, rt1)
+//    }
+//}
 
 func TestBadRecursiveType(t *testing.T) {
 	type Rec ***Rec
@@ -992,61 +992,61 @@ type Direct struct {
 	M map[string]int
 }
 
-func TestIndirectSliceMapArray(t *testing.T) {
-	// Marshal indirect, unmarshal to direct.
-	i := new(Indirect)
-	i.A = new(**[3]int)
-	*i.A = new(*[3]int)
-	**i.A = new([3]int)
-	***i.A = [3]int{1, 2, 3}
-	i.S = new(**[]int)
-	*i.S = new(*[]int)
-	**i.S = new([]int)
-	***i.S = []int{4, 5, 6}
-	i.M = new(***map[string]int)
-	*i.M = new(**map[string]int)
-	**i.M = new(*map[string]int)
-	***i.M = new(map[string]int)
-	****i.M = map[string]int{"one": 1, "two": 2, "three": 3}
-	b := new(bytes.Buffer)
-	NewEncoder(b).Encode(i)
-	dec := NewDecoder(b)
-	var d Direct
-	err := dec.Decode(&d)
-	if err != nil {
-		t.Error("error: ", err)
-	}
-	if len(d.A) != 3 || d.A[0] != 1 || d.A[1] != 2 || d.A[2] != 3 {
-		t.Errorf("indirect to direct: d.A is %v not %v", d.A, ***i.A)
-	}
-	if len(d.S) != 3 || d.S[0] != 4 || d.S[1] != 5 || d.S[2] != 6 {
-		t.Errorf("indirect to direct: d.S is %v not %v", d.S, ***i.S)
-	}
-	if len(d.M) != 3 || d.M["one"] != 1 || d.M["two"] != 2 || d.M["three"] != 3 {
-		t.Errorf("indirect to direct: d.M is %v not %v", d.M, ***i.M)
-	}
-	// Marshal direct, unmarshal to indirect.
-	d.A = [3]int{11, 22, 33}
-	d.S = []int{44, 55, 66}
-	d.M = map[string]int{"four": 4, "five": 5, "six": 6}
-	i = new(Indirect)
-	b.Reset()
-	NewEncoder(b).Encode(d)
-	dec = NewDecoder(b)
-	err = dec.Decode(&i)
-	if err != nil {
-		t.Fatal("error: ", err)
-	}
-	if len(***i.A) != 3 || (***i.A)[0] != 11 || (***i.A)[1] != 22 || (***i.A)[2] != 33 {
-		t.Errorf("direct to indirect: ***i.A is %v not %v", ***i.A, d.A)
-	}
-	if len(***i.S) != 3 || (***i.S)[0] != 44 || (***i.S)[1] != 55 || (***i.S)[2] != 66 {
-		t.Errorf("direct to indirect: ***i.S is %v not %v", ***i.S, ***i.S)
-	}
-	if len(****i.M) != 3 || (****i.M)["four"] != 4 || (****i.M)["five"] != 5 || (****i.M)["six"] != 6 {
-		t.Errorf("direct to indirect: ****i.M is %v not %v", ****i.M, d.M)
-	}
-}
+//func TestIndirectSliceMapArray(t *testing.T) {
+//    // Marshal indirect, unmarshal to direct.
+//    i := new(Indirect)
+//    i.A = new(**[3]int)
+//    *i.A = new(*[3]int)
+//    **i.A = new([3]int)
+//    ***i.A = [3]int{1, 2, 3}
+//    i.S = new(**[]int)
+//    *i.S = new(*[]int)
+//    **i.S = new([]int)
+//    ***i.S = []int{4, 5, 6}
+//    i.M = new(***map[string]int)
+//    *i.M = new(**map[string]int)
+//    **i.M = new(*map[string]int)
+//    ***i.M = new(map[string]int)
+//    ****i.M = map[string]int{"one": 1, "two": 2, "three": 3}
+//    b := new(bytes.Buffer)
+//    NewEncoder(b).Encode(i)
+//    dec := NewDecoder(b)
+//    var d Direct
+//    err := dec.Decode(&d)
+//    if err != nil {
+//        t.Error("error: ", err)
+//    }
+//    if len(d.A) != 3 || d.A[0] != 1 || d.A[1] != 2 || d.A[2] != 3 {
+//        t.Errorf("indirect to direct: d.A is %v not %v", d.A, ***i.A)
+//    }
+//    if len(d.S) != 3 || d.S[0] != 4 || d.S[1] != 5 || d.S[2] != 6 {
+//        t.Errorf("indirect to direct: d.S is %v not %v", d.S, ***i.S)
+//    }
+//    if len(d.M) != 3 || d.M["one"] != 1 || d.M["two"] != 2 || d.M["three"] != 3 {
+//        t.Errorf("indirect to direct: d.M is %v not %v", d.M, ***i.M)
+//    }
+//    // Marshal direct, unmarshal to indirect.
+//    d.A = [3]int{11, 22, 33}
+//    d.S = []int{44, 55, 66}
+//    d.M = map[string]int{"four": 4, "five": 5, "six": 6}
+//    i = new(Indirect)
+//    b.Reset()
+//    NewEncoder(b).Encode(d)
+//    dec = NewDecoder(b)
+//    err = dec.Decode(&i)
+//    if err != nil {
+//        t.Fatal("error: ", err)
+//    }
+//    if len(***i.A) != 3 || (***i.A)[0] != 11 || (***i.A)[1] != 22 || (***i.A)[2] != 33 {
+//        t.Errorf("direct to indirect: ***i.A is %v not %v", ***i.A, d.A)
+//    }
+//    if len(***i.S) != 3 || (***i.S)[0] != 44 || (***i.S)[1] != 55 || (***i.S)[2] != 66 {
+//        t.Errorf("direct to indirect: ***i.S is %v not %v", ***i.S, ***i.S)
+//    }
+//    if len(****i.M) != 3 || (****i.M)["four"] != 4 || (****i.M)["five"] != 5 || (****i.M)["six"] != 6 {
+//        t.Errorf("direct to indirect: ****i.M is %v not %v", ****i.M, d.M)
+//    }
+//}
 
 // An interface with several implementations
 type Squarer interface {
@@ -1437,44 +1437,44 @@ func testFuzz(t *testing.T, seed int64, n int, input ...interface{}) {
 
 // TestFuzzOneByte tries to decode corrupted input sequences
 // and checks that no panic occurs.
-func TestFuzzOneByte(t *testing.T) {
-	buf := new(bytes.Buffer)
-	Register(OnTheFly{})
-	dt := newDT()
-	if err := NewEncoder(buf).Encode(dt); err != nil {
-		t.Fatal(err)
-	}
-	s := buf.String()
+//func TestFuzzOneByte(t *testing.T) {
+//    buf := new(bytes.Buffer)
+//    Register(OnTheFly{})
+//    dt := newDT()
+//    if err := NewEncoder(buf).Encode(dt); err != nil {
+//        t.Fatal(err)
+//    }
+//    s := buf.String()
 
-	indices := make([]int, 0, len(s))
-	for i := 0; i < len(s); i++ {
-		switch i {
-		case 14, 167, 231, 265: // a slice length, corruptions are not handled yet.
-			continue
-		}
-		indices = append(indices, i)
-	}
-	if testing.Short() {
-		indices = []int{1, 111, 178} // known fixed panics
-	}
-	for _, i := range indices {
-		for j := 0; j < 256; j += 3 {
-			b := []byte(s)
-			b[i] ^= byte(j)
-			var e DT
-			func() {
-				defer func() {
-					if p := recover(); p != nil {
-						t.Errorf("crash for b[%d] ^= 0x%x", i, j)
-						panic(p)
-					}
-				}()
-				err := NewDecoder(bytes.NewReader(b)).Decode(&e)
-				_ = err
-			}()
-		}
-	}
-}
+//    indices := make([]int, 0, len(s))
+//    for i := 0; i < len(s); i++ {
+//        switch i {
+//        case 14, 167, 231, 265: // a slice length, corruptions are not handled yet.
+//            continue
+//        }
+//        indices = append(indices, i)
+//    }
+//    if testing.Short() {
+//        indices = []int{1, 111, 178} // known fixed panics
+//    }
+//    for _, i := range indices {
+//        for j := 0; j < 256; j += 3 {
+//            b := []byte(s)
+//            b[i] ^= byte(j)
+//            var e DT
+//            func() {
+//                defer func() {
+//                    if p := recover(); p != nil {
+//                        t.Errorf("crash for b[%d] ^= 0x%x", i, j)
+//                        panic(p)
+//                    }
+//                }()
+//                err := NewDecoder(bytes.NewReader(b)).Decode(&e)
+//                _ = err
+//            }()
+//        }
+//    }
+//}
 
 // Don't crash, just give error with invalid type id.
 // Issue 9649.

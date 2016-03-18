@@ -237,41 +237,41 @@ type GobTestIndirectArrayEncDec struct {
 	A ***ArrayStruct // indirections to a large receiver.
 }
 
-func TestGobEncoderField(t *testing.T) {
-	b := new(bytes.Buffer)
-	// First a field that's a structure.
-	enc := NewEncoder(b)
-	err := enc.Encode(GobTest0{17, &ByteStruct{'A'}})
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTest0)
-	err = dec.Decode(x)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	if x.G.a != 'A' {
-		t.Errorf("expected 'A' got %c", x.G.a)
-	}
-	// Now a field that's not a structure.
-	b.Reset()
-	gobber := Gobber(23)
-	bgobber := BinaryGobber(24)
-	tgobber := TextGobber(25)
-	err = enc.Encode(GobTest3{17, &gobber, &bgobber, &tgobber})
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	y := new(GobTest3)
-	err = dec.Decode(y)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	if *y.G != 23 || *y.B != 24 || *y.T != 25 {
-		t.Errorf("expected '23 got %d", *y.G)
-	}
-}
+//func TestGobEncoderField(t *testing.T) {
+//    b := new(bytes.Buffer)
+//    // First a field that's a structure.
+//    enc := NewEncoder(b)
+//    err := enc.Encode(GobTest0{17, &ByteStruct{'A'}})
+//    if err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    dec := NewDecoder(b)
+//    x := new(GobTest0)
+//    err = dec.Decode(x)
+//    if err != nil {
+//        t.Fatal("decode error:", err)
+//    }
+//    if x.G.a != 'A' {
+//        t.Errorf("expected 'A' got %c", x.G.a)
+//    }
+//    // Now a field that's not a structure.
+//    b.Reset()
+//    gobber := Gobber(23)
+//    bgobber := BinaryGobber(24)
+//    tgobber := TextGobber(25)
+//    err = enc.Encode(GobTest3{17, &gobber, &bgobber, &tgobber})
+//    if err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    y := new(GobTest3)
+//    err = dec.Decode(y)
+//    if err != nil {
+//        t.Fatal("decode error:", err)
+//    }
+//    if *y.G != 23 || *y.B != 24 || *y.T != 25 {
+//        t.Errorf("expected '23 got %d", *y.G)
+//    }
+//}
 
 // Even though the field is a value, we can still take its address
 // and should be able to call the methods.
@@ -380,159 +380,159 @@ func TestGobEncoderIndirectArrayField(t *testing.T) {
 // and may even be bad but it works and it's hard to prevent
 // without exposing the contents of the object, which would
 // defeat the purpose.
-func TestGobEncoderFieldsOfDifferentType(t *testing.T) {
-	// first, string in field to byte in field
-	b := new(bytes.Buffer)
-	enc := NewEncoder(b)
-	err := enc.Encode(GobTest1{17, &StringStruct{"ABC"}})
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTest0)
-	err = dec.Decode(x)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	if x.G.a != 'A' {
-		t.Errorf("expected 'A' got %c", x.G.a)
-	}
-	// now the other direction, byte in field to string in field
-	b.Reset()
-	err = enc.Encode(GobTest0{17, &ByteStruct{'X'}})
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	y := new(GobTest1)
-	err = dec.Decode(y)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	if y.G.s != "XYZ" {
-		t.Fatalf("expected `XYZ` got %q", y.G.s)
-	}
-}
+//func TestGobEncoderFieldsOfDifferentType(t *testing.T) {
+//    // first, string in field to byte in field
+//    b := new(bytes.Buffer)
+//    enc := NewEncoder(b)
+//    err := enc.Encode(GobTest1{17, &StringStruct{"ABC"}})
+//    if err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    dec := NewDecoder(b)
+//    x := new(GobTest0)
+//    err = dec.Decode(x)
+//    if err != nil {
+//        t.Fatal("decode error:", err)
+//    }
+//    if x.G.a != 'A' {
+//        t.Errorf("expected 'A' got %c", x.G.a)
+//    }
+//    // now the other direction, byte in field to string in field
+//    b.Reset()
+//    err = enc.Encode(GobTest0{17, &ByteStruct{'X'}})
+//    if err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    y := new(GobTest1)
+//    err = dec.Decode(y)
+//    if err != nil {
+//        t.Fatal("decode error:", err)
+//    }
+//    if y.G.s != "XYZ" {
+//        t.Fatalf("expected `XYZ` got %q", y.G.s)
+//    }
+//}
 
 // Test that we can encode a value and decode into a pointer.
-func TestGobEncoderValueEncoder(t *testing.T) {
-	// first, string in field to byte in field
-	b := new(bytes.Buffer)
-	enc := NewEncoder(b)
-	err := enc.Encode(GobTest4{17, ValueGobber("hello"), BinaryValueGobber("Καλημέρα"), TextValueGobber("こんにちは")})
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTest5)
-	err = dec.Decode(x)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	if *x.V != "hello" || *x.BV != "Καλημέρα" || *x.TV != "こんにちは" {
-		t.Errorf("expected `hello` got %s", *x.V)
-	}
-}
+//func TestGobEncoderValueEncoder(t *testing.T) {
+//    // first, string in field to byte in field
+//    b := new(bytes.Buffer)
+//    enc := NewEncoder(b)
+//    err := enc.Encode(GobTest4{17, ValueGobber("hello"), BinaryValueGobber("Καλημέρα"), TextValueGobber("こんにちは")})
+//    if err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    dec := NewDecoder(b)
+//    x := new(GobTest5)
+//    err = dec.Decode(x)
+//    if err != nil {
+//        t.Fatal("decode error:", err)
+//    }
+//    if *x.V != "hello" || *x.BV != "Καλημέρα" || *x.TV != "こんにちは" {
+//        t.Errorf("expected `hello` got %s", *x.V)
+//    }
+//}
 
 // Test that we can use a value then a pointer type of a GobEncoder
 // in the same encoded value.  Bug 4647.
-func TestGobEncoderValueThenPointer(t *testing.T) {
-	v := ValueGobber("forty-two")
-	w := ValueGobber("six-by-nine")
-	bv := BinaryValueGobber("1nanocentury")
-	bw := BinaryValueGobber("πseconds")
-	tv := TextValueGobber("gravitationalacceleration")
-	tw := TextValueGobber("π²ft/s²")
+//func TestGobEncoderValueThenPointer(t *testing.T) {
+//    v := ValueGobber("forty-two")
+//    w := ValueGobber("six-by-nine")
+//    bv := BinaryValueGobber("1nanocentury")
+//    bw := BinaryValueGobber("πseconds")
+//    tv := TextValueGobber("gravitationalacceleration")
+//    tw := TextValueGobber("π²ft/s²")
 
-	// this was a bug: encoding a GobEncoder by value before a GobEncoder
-	// pointer would cause duplicate type definitions to be sent.
+//    // this was a bug: encoding a GobEncoder by value before a GobEncoder
+//    // pointer would cause duplicate type definitions to be sent.
 
-	b := new(bytes.Buffer)
-	enc := NewEncoder(b)
-	if err := enc.Encode(GobTest6{42, v, &w, bv, &bw, tv, &tw}); err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTest6)
-	if err := dec.Decode(x); err != nil {
-		t.Fatal("decode error:", err)
-	}
+//    b := new(bytes.Buffer)
+//    enc := NewEncoder(b)
+//    if err := enc.Encode(GobTest6{42, v, &w, bv, &bw, tv, &tw}); err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    dec := NewDecoder(b)
+//    x := new(GobTest6)
+//    if err := dec.Decode(x); err != nil {
+//        t.Fatal("decode error:", err)
+//    }
 
-	if got, want := x.V, v; got != want {
-		t.Errorf("v = %q, want %q", got, want)
-	}
-	if got, want := x.W, w; got == nil {
-		t.Errorf("w = nil, want %q", want)
-	} else if *got != want {
-		t.Errorf("w = %q, want %q", *got, want)
-	}
+//    if got, want := x.V, v; got != want {
+//        t.Errorf("v = %q, want %q", got, want)
+//    }
+//    if got, want := x.W, w; got == nil {
+//        t.Errorf("w = nil, want %q", want)
+//    } else if *got != want {
+//        t.Errorf("w = %q, want %q", *got, want)
+//    }
 
-	if got, want := x.BV, bv; got != want {
-		t.Errorf("bv = %q, want %q", got, want)
-	}
-	if got, want := x.BW, bw; got == nil {
-		t.Errorf("bw = nil, want %q", want)
-	} else if *got != want {
-		t.Errorf("bw = %q, want %q", *got, want)
-	}
+//    if got, want := x.BV, bv; got != want {
+//        t.Errorf("bv = %q, want %q", got, want)
+//    }
+//    if got, want := x.BW, bw; got == nil {
+//        t.Errorf("bw = nil, want %q", want)
+//    } else if *got != want {
+//        t.Errorf("bw = %q, want %q", *got, want)
+//    }
 
-	if got, want := x.TV, tv; got != want {
-		t.Errorf("tv = %q, want %q", got, want)
-	}
-	if got, want := x.TW, tw; got == nil {
-		t.Errorf("tw = nil, want %q", want)
-	} else if *got != want {
-		t.Errorf("tw = %q, want %q", *got, want)
-	}
-}
+//    if got, want := x.TV, tv; got != want {
+//        t.Errorf("tv = %q, want %q", got, want)
+//    }
+//    if got, want := x.TW, tw; got == nil {
+//        t.Errorf("tw = nil, want %q", want)
+//    } else if *got != want {
+//        t.Errorf("tw = %q, want %q", *got, want)
+//    }
+//}
 
 // Test that we can use a pointer then a value type of a GobEncoder
 // in the same encoded value.
-func TestGobEncoderPointerThenValue(t *testing.T) {
-	v := ValueGobber("forty-two")
-	w := ValueGobber("six-by-nine")
-	bv := BinaryValueGobber("1nanocentury")
-	bw := BinaryValueGobber("πseconds")
-	tv := TextValueGobber("gravitationalacceleration")
-	tw := TextValueGobber("π²ft/s²")
+//func TestGobEncoderPointerThenValue(t *testing.T) {
+//    v := ValueGobber("forty-two")
+//    w := ValueGobber("six-by-nine")
+//    bv := BinaryValueGobber("1nanocentury")
+//    bw := BinaryValueGobber("πseconds")
+//    tv := TextValueGobber("gravitationalacceleration")
+//    tw := TextValueGobber("π²ft/s²")
 
-	b := new(bytes.Buffer)
-	enc := NewEncoder(b)
-	if err := enc.Encode(GobTest7{42, &v, w, &bv, bw, &tv, tw}); err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTest7)
-	if err := dec.Decode(x); err != nil {
-		t.Fatal("decode error:", err)
-	}
+//    b := new(bytes.Buffer)
+//    enc := NewEncoder(b)
+//    if err := enc.Encode(GobTest7{42, &v, w, &bv, bw, &tv, tw}); err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    dec := NewDecoder(b)
+//    x := new(GobTest7)
+//    if err := dec.Decode(x); err != nil {
+//        t.Fatal("decode error:", err)
+//    }
 
-	if got, want := x.V, v; got == nil {
-		t.Errorf("v = nil, want %q", want)
-	} else if *got != want {
-		t.Errorf("v = %q, want %q", *got, want)
-	}
-	if got, want := x.W, w; got != want {
-		t.Errorf("w = %q, want %q", got, want)
-	}
+//    if got, want := x.V, v; got == nil {
+//        t.Errorf("v = nil, want %q", want)
+//    } else if *got != want {
+//        t.Errorf("v = %q, want %q", *got, want)
+//    }
+//    if got, want := x.W, w; got != want {
+//        t.Errorf("w = %q, want %q", got, want)
+//    }
 
-	if got, want := x.BV, bv; got == nil {
-		t.Errorf("bv = nil, want %q", want)
-	} else if *got != want {
-		t.Errorf("bv = %q, want %q", *got, want)
-	}
-	if got, want := x.BW, bw; got != want {
-		t.Errorf("bw = %q, want %q", got, want)
-	}
+//    if got, want := x.BV, bv; got == nil {
+//        t.Errorf("bv = nil, want %q", want)
+//    } else if *got != want {
+//        t.Errorf("bv = %q, want %q", *got, want)
+//    }
+//    if got, want := x.BW, bw; got != want {
+//        t.Errorf("bw = %q, want %q", got, want)
+//    }
 
-	if got, want := x.TV, tv; got == nil {
-		t.Errorf("tv = nil, want %q", want)
-	} else if *got != want {
-		t.Errorf("tv = %q, want %q", *got, want)
-	}
-	if got, want := x.TW, tw; got != want {
-		t.Errorf("tw = %q, want %q", got, want)
-	}
-}
+//    if got, want := x.TV, tv; got == nil {
+//        t.Errorf("tv = nil, want %q", want)
+//    } else if *got != want {
+//        t.Errorf("tv = %q, want %q", *got, want)
+//    }
+//    if got, want := x.TW, tw; got != want {
+//        t.Errorf("tw = %q, want %q", got, want)
+//    }
+//}
 
 func TestGobEncoderFieldTypeError(t *testing.T) {
 	// GobEncoder to non-decoder: error
@@ -624,27 +624,27 @@ func TestGobEncoderIgnoreStructField(t *testing.T) {
 	}
 }
 
-func TestGobEncoderIgnoreNonStructField(t *testing.T) {
-	b := new(bytes.Buffer)
-	// First a field that's a structure.
-	enc := NewEncoder(b)
-	gobber := Gobber(23)
-	bgobber := BinaryGobber(24)
-	tgobber := TextGobber(25)
-	err := enc.Encode(GobTest3{17, &gobber, &bgobber, &tgobber})
-	if err != nil {
-		t.Fatal("encode error:", err)
-	}
-	dec := NewDecoder(b)
-	x := new(GobTestIgnoreEncoder)
-	err = dec.Decode(x)
-	if err != nil {
-		t.Fatal("decode error:", err)
-	}
-	if x.X != 17 {
-		t.Errorf("expected 17 got %c", x.X)
-	}
-}
+//func TestGobEncoderIgnoreNonStructField(t *testing.T) {
+//    b := new(bytes.Buffer)
+//    // First a field that's a structure.
+//    enc := NewEncoder(b)
+//    gobber := Gobber(23)
+//    bgobber := BinaryGobber(24)
+//    tgobber := TextGobber(25)
+//    err := enc.Encode(GobTest3{17, &gobber, &bgobber, &tgobber})
+//    if err != nil {
+//        t.Fatal("encode error:", err)
+//    }
+//    dec := NewDecoder(b)
+//    x := new(GobTestIgnoreEncoder)
+//    err = dec.Decode(x)
+//    if err != nil {
+//        t.Fatal("decode error:", err)
+//    }
+//    if x.X != 17 {
+//        t.Errorf("expected 17 got %c", x.X)
+//    }
+//}
 
 func TestGobEncoderIgnoreNilEncoder(t *testing.T) {
 	b := new(bytes.Buffer)
