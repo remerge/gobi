@@ -28,7 +28,7 @@ type Encoder struct {
 	err        error
 	remember   map[uintptr]bool // remember set
 
-	sizeGauge metrics.Gauge
+	SizeGauge metrics.Gauge
 }
 
 // Before we encode a message, we reserve space at the head of the
@@ -48,11 +48,11 @@ func NewEncoder(w io.Writer) *Encoder {
 }
 
 func (enc *Encoder) SetupSizeMetrics(gaugeName string) {
-	if enc.sizeGauge != nil {
+	if enc.SizeGauge != nil {
 		return
 	}
 
-	enc.sizeGauge = metrics.GetOrRegisterGauge(gaugeName, nil)
+	enc.SizeGauge = metrics.GetOrRegisterGauge(gaugeName, nil)
 }
 
 // writer() returns the innermost writer the encoder is using
@@ -84,8 +84,8 @@ func (enc *Encoder) writeMessage(w io.Writer, b *encBuffer) {
 	message := b.Bytes()
 	messageLen := len(message) - maxLength
 
-	if enc.sizeGauge != nil {
-		enc.sizeGauge.Update(int64(messageLen))
+	if enc.SizeGauge != nil {
+		enc.SizeGauge.Update(int64(messageLen))
 	}
 
 	// Length cannot be bigger than the decoder can handle.

@@ -31,7 +31,7 @@ type Decoder struct {
 	countBuf     []byte                                  // used for decoding integers while parsing messages
 	err          error
 	identity     map[uint64]reflect.Value
-	sizeGauge    metrics.Gauge
+	SizeGauge    metrics.Gauge
 }
 
 // NewDecoder returns a new decoder that reads from the io.Reader.
@@ -55,11 +55,11 @@ func NewDecoder(r io.Reader) *Decoder {
 }
 
 func (dec *Decoder) SetupSizeMetrics(gaugeName string) {
-	if dec.sizeGauge != nil {
+	if dec.SizeGauge != nil {
 		return
 	}
 
-	dec.sizeGauge = metrics.GetOrRegisterGauge(gaugeName, nil)
+	dec.SizeGauge = metrics.GetOrRegisterGauge(gaugeName, nil)
 }
 
 // recvType loads the definition of a type.
@@ -93,8 +93,8 @@ func (dec *Decoder) recvMessage() bool {
 		return false
 	}
 
-	if dec.sizeGauge != nil {
-		dec.sizeGauge.Update(int64(nbytes))
+	if dec.SizeGauge != nil {
+		dec.SizeGauge.Update(int64(nbytes))
 	}
 
 	if int64(nbytes) >= DecoderMaxMsgSizeBytes {
