@@ -12,20 +12,23 @@ import (
 	"sync"
 )
 
+// Sanity check on incoming message sizes; This needs to be increased in some
+// places (bm CPM model snapshot)
+var DecoderMaxMsgSizeBytes = uint64(1 << 30)
+
 // A Decoder manages the receipt of type and data information read from the
 // remote side of a connection.
 type Decoder struct {
-	mutex          sync.Mutex                              // each item must be received atomically
-	r              io.Reader                               // source of the data
-	buf            decBuffer                               // buffer for more efficient i/o from r
-	wireType       map[typeId]*wireType                    // map from remote ID to local description
-	decoderCache   map[reflect.Type]map[typeId]**decEngine // cache of compiled engines
-	ignorerCache   map[typeId]**decEngine                  // ditto for ignored objects
-	freeList       *decoderState                           // list of free decoderStates; avoids reallocation
-	countBuf       []byte                                  // used for decoding integers while parsing messages
-	err            error
-	identity       map[uint64]reflect.Value
-	SizeLimitBytes uint64
+	mutex        sync.Mutex                              // each item must be received atomically
+	r            io.Reader                               // source of the data
+	buf          decBuffer                               // buffer for more efficient i/o from r
+	wireType     map[typeId]*wireType                    // map from remote ID to local description
+	decoderCache map[reflect.Type]map[typeId]**decEngine // cache of compiled engines
+	ignorerCache map[typeId]**decEngine                  // ditto for ignored objects
+	freeList     *decoderState                           // list of free decoderStates; avoids reallocation
+	countBuf     []byte                                  // used for decoding integers while parsing messages
+	err          error
+	identity     map[uint64]reflect.Value
 }
 
 // NewDecoder returns a new decoder that reads from the io.Reader.
@@ -44,10 +47,6 @@ func NewDecoder(r io.Reader) *Decoder {
 	dec.decoderCache = make(map[reflect.Type]map[typeId]**decEngine)
 	dec.ignorerCache = make(map[typeId]**decEngine)
 	dec.countBuf = make([]byte, 9) // counts may be uint64s (unlikely!), require 9 bytes
-
-	// Sanity check on incoming message sizes; This needs to be increased in some
-	// places (bm CPM model snapshot)
-	dec.SizeLimitBytes = 1 << 30
 
 	return dec
 }
@@ -81,7 +80,7 @@ func (dec *Decoder) recvMessage() bool {
 		dec.err = err
 		return false
 	}
-	if nbytes >= dec.SizeLimitBytes {
+	if nbytes >= DecoderMaxMsgSizeBytes {
 		dec.err = errBadCount
 		return false
 	}
