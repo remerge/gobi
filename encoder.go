@@ -22,6 +22,8 @@ type Encoder struct {
 	byteBuf    encBuffer               // buffer for top-level encoderState
 	err        error
 	remember   map[uintptr]bool // remember set
+
+	SizeLimitBytes uint64
 }
 
 // Before we encode a message, we reserve space at the head of the
@@ -36,6 +38,10 @@ func NewEncoder(w io.Writer) *Encoder {
 	enc.w = []io.Writer{w}
 	enc.sent = make(map[reflect.Type]typeId)
 	enc.countState = enc.newEncoderState(new(encBuffer))
+
+	// See the same field in the Decoder
+	enc.SizeLimitBytes = 1 << 30
+
 	return enc
 }
 
@@ -67,11 +73,13 @@ func (enc *Encoder) writeMessage(w io.Writer, b *encBuffer) {
 	// it by hand.
 	message := b.Bytes()
 	messageLen := len(message) - maxLength
+
 	// Length cannot be bigger than the decoder can handle.
-	if messageLen >= tooBig {
+	if uint64(messageLen) >= enc.SizeLimitBytes {
 		enc.setError(errors.New("gob: encoder: message too big"))
 		return
 	}
+
 	// Encode the length.
 	enc.countState.b.Reset()
 	enc.countState.encodeUint(uint64(messageLen))

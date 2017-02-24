@@ -12,24 +12,20 @@ import (
 	"sync"
 )
 
-// tooBig provides a sanity check for sizes; used in several places.
-// Upper limit of 1GB, allowing room to grow a little without overflow.
-// TODO: make this adjustable?
-const tooBig = 1 << 30
-
 // A Decoder manages the receipt of type and data information read from the
 // remote side of a connection.
 type Decoder struct {
-	mutex        sync.Mutex                              // each item must be received atomically
-	r            io.Reader                               // source of the data
-	buf          decBuffer                               // buffer for more efficient i/o from r
-	wireType     map[typeId]*wireType                    // map from remote ID to local description
-	decoderCache map[reflect.Type]map[typeId]**decEngine // cache of compiled engines
-	ignorerCache map[typeId]**decEngine                  // ditto for ignored objects
-	freeList     *decoderState                           // list of free decoderStates; avoids reallocation
-	countBuf     []byte                                  // used for decoding integers while parsing messages
-	err          error
-	identity     map[uint64]reflect.Value
+	mutex          sync.Mutex                              // each item must be received atomically
+	r              io.Reader                               // source of the data
+	buf            decBuffer                               // buffer for more efficient i/o from r
+	wireType       map[typeId]*wireType                    // map from remote ID to local description
+	decoderCache   map[reflect.Type]map[typeId]**decEngine // cache of compiled engines
+	ignorerCache   map[typeId]**decEngine                  // ditto for ignored objects
+	freeList       *decoderState                           // list of free decoderStates; avoids reallocation
+	countBuf       []byte                                  // used for decoding integers while parsing messages
+	err            error
+	identity       map[uint64]reflect.Value
+	SizeLimitBytes uint64
 }
 
 // NewDecoder returns a new decoder that reads from the io.Reader.
@@ -37,15 +33,21 @@ type Decoder struct {
 // bufio.Reader.
 func NewDecoder(r io.Reader) *Decoder {
 	dec := new(Decoder)
+
 	// We use the ability to read bytes as a plausible surrogate for buffering.
 	if _, ok := r.(io.ByteReader); !ok {
 		r = bufio.NewReader(r)
 	}
+
 	dec.r = r
 	dec.wireType = make(map[typeId]*wireType)
 	dec.decoderCache = make(map[reflect.Type]map[typeId]**decEngine)
 	dec.ignorerCache = make(map[typeId]**decEngine)
 	dec.countBuf = make([]byte, 9) // counts may be uint64s (unlikely!), require 9 bytes
+
+	// Sanity check on incoming message sizes; This needs to be increased in some
+	// places (bm CPM model snapshot)
+	dec.SizeLimitBytes = 1 << 30
 
 	return dec
 }
@@ -79,7 +81,7 @@ func (dec *Decoder) recvMessage() bool {
 		dec.err = err
 		return false
 	}
-	if nbytes >= tooBig {
+	if nbytes >= dec.SizeLimitBytes {
 		dec.err = errBadCount
 		return false
 	}
