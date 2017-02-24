@@ -9,10 +9,12 @@ import (
 	"io"
 	"reflect"
 	"sync"
+
+	metrics "github.com/rcrowley/go-metrics"
 )
 
 // See the same field in the Decoder
-var EncoderMaxMsgSizeBytes = uint64(1 << 30)
+var EncoderMaxMsgSizeBytes = int64(1 << 30)
 
 // An Encoder manages the transmission of type and data information to the
 // other side of a connection.
@@ -25,6 +27,8 @@ type Encoder struct {
 	byteBuf    encBuffer               // buffer for top-level encoderState
 	err        error
 	remember   map[uintptr]bool // remember set
+
+	sizeGauge metrics.Gauge
 }
 
 // Before we encode a message, we reserve space at the head of the
@@ -41,6 +45,14 @@ func NewEncoder(w io.Writer) *Encoder {
 	enc.countState = enc.newEncoderState(new(encBuffer))
 
 	return enc
+}
+
+func (enc *Encoder) SetupSizeMetrics(gaugeName string) {
+	if enc.sizeGauge != nil {
+		return
+	}
+
+	enc.sizeGauge = metrics.GetOrRegisterGauge(gaugeName, nil)
 }
 
 // writer() returns the innermost writer the encoder is using
@@ -72,8 +84,12 @@ func (enc *Encoder) writeMessage(w io.Writer, b *encBuffer) {
 	message := b.Bytes()
 	messageLen := len(message) - maxLength
 
+	if enc.sizeGauge != nil {
+		enc.sizeGauge.Update(int64(messageLen))
+	}
+
 	// Length cannot be bigger than the decoder can handle.
-	if uint64(messageLen) >= EncoderMaxMsgSizeBytes {
+	if int64(messageLen) >= EncoderMaxMsgSizeBytes {
 		enc.setError(errors.New("gob: encoder: message too big"))
 		return
 	}

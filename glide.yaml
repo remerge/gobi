@@ -1,2 +1,5 @@
 package: github.com/remerge/gobi
-import: []
+import:
+- package: github.com/rcrowley/go-metrics
+  subpackages:
+  - exp

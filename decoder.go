@@ -10,11 +10,13 @@ import (
 	"io"
 	"reflect"
 	"sync"
+
+	metrics "github.com/rcrowley/go-metrics"
 )
 
 // Sanity check on incoming message sizes; This needs to be increased in some
 // places (bm CPM model snapshot)
-var DecoderMaxMsgSizeBytes = uint64(1 << 30)
+var DecoderMaxMsgSizeBytes = int64(1 << 30)
 
 // A Decoder manages the receipt of type and data information read from the
 // remote side of a connection.
@@ -29,6 +31,7 @@ type Decoder struct {
 	countBuf     []byte                                  // used for decoding integers while parsing messages
 	err          error
 	identity     map[uint64]reflect.Value
+	sizeGauge    metrics.Gauge
 }
 
 // NewDecoder returns a new decoder that reads from the io.Reader.
@@ -49,6 +52,14 @@ func NewDecoder(r io.Reader) *Decoder {
 	dec.countBuf = make([]byte, 9) // counts may be uint64s (unlikely!), require 9 bytes
 
 	return dec
+}
+
+func (dec *Decoder) SetupSizeMetrics(gaugeName string) {
+	if dec.sizeGauge != nil {
+		return
+	}
+
+	dec.sizeGauge = metrics.GetOrRegisterGauge(gaugeName, nil)
 }
 
 // recvType loads the definition of a type.
@@ -76,14 +87,21 @@ var errBadCount = errors.New("invalid message length")
 func (dec *Decoder) recvMessage() bool {
 	// Read a count.
 	nbytes, _, err := decodeUintReader(dec.r, dec.countBuf)
+
 	if err != nil {
 		dec.err = err
 		return false
 	}
-	if nbytes >= DecoderMaxMsgSizeBytes {
+
+	if dec.sizeGauge != nil {
+		dec.sizeGauge.Update(int64(nbytes))
+	}
+
+	if int64(nbytes) >= DecoderMaxMsgSizeBytes {
 		dec.err = errBadCount
 		return false
 	}
+
 	dec.readMessage(int(nbytes))
 	return dec.err == nil
 }

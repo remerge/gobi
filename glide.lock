@@ -1,4 +1,8 @@
-hash: b19335eb6d452e58fd6d091a724254e7e51b82179510086cc57c7e9e6941250c
-updated: 2016-03-17T11:00:57.413219566+01:00
-imports: []
-devImports: []
+hash: aeef59a1b44ae280034078ba766ec38314d4eb33675965839a84f5682a05b74f
+updated: 2017-02-24T17:20:58.751089212Z
+imports:
+- name: github.com/rcrowley/go-metrics
+  version: 1f30fe9094a513ce4c700b9a54458bbb0c96996c
+  subpackages:
+  - exp
+testImports: []
