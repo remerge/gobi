@@ -10,12 +10,13 @@ import (
 	"io"
 	"reflect"
 	"sync"
+
+	metrics "github.com/rcrowley/go-metrics"
 )
 
-// tooBig provides a sanity check for sizes; used in several places.
-// Upper limit of 1GB, allowing room to grow a little without overflow.
-// TODO: make this adjustable?
-const tooBig = 1 << 30
+// Sanity check on incoming message sizes; This needs to be increased in some
+// places (bm CPM model snapshot)
+var DecoderMaxMsgSizeBytes = int64(1 << 30)
 
 // A Decoder manages the receipt of type and data information read from the
 // remote side of a connection.
@@ -30,6 +31,7 @@ type Decoder struct {
 	countBuf     []byte                                  // used for decoding integers while parsing messages
 	err          error
 	identity     map[uint64]reflect.Value
+	SizeGauge    metrics.Gauge
 }
 
 // NewDecoder returns a new decoder that reads from the io.Reader.
@@ -37,10 +39,12 @@ type Decoder struct {
 // bufio.Reader.
 func NewDecoder(r io.Reader) *Decoder {
 	dec := new(Decoder)
+
 	// We use the ability to read bytes as a plausible surrogate for buffering.
 	if _, ok := r.(io.ByteReader); !ok {
 		r = bufio.NewReader(r)
 	}
+
 	dec.r = r
 	dec.wireType = make(map[typeId]*wireType)
 	dec.decoderCache = make(map[reflect.Type]map[typeId]**decEngine)
@@ -48,6 +52,14 @@ func NewDecoder(r io.Reader) *Decoder {
 	dec.countBuf = make([]byte, 9) // counts may be uint64s (unlikely!), require 9 bytes
 
 	return dec
+}
+
+func (dec *Decoder) SetupSizeMetrics(gaugeName string) {
+	if dec.SizeGauge != nil {
+		return
+	}
+
+	dec.SizeGauge = metrics.GetOrRegisterGauge(gaugeName, nil)
 }
 
 // recvType loads the definition of a type.
@@ -75,14 +87,21 @@ var errBadCount = errors.New("invalid message length")
 func (dec *Decoder) recvMessage() bool {
 	// Read a count.
 	nbytes, _, err := decodeUintReader(dec.r, dec.countBuf)
+
 	if err != nil {
 		dec.err = err
 		return false
 	}
-	if nbytes >= tooBig {
+
+	if dec.SizeGauge != nil {
+		dec.SizeGauge.Update(int64(nbytes))
+	}
+
+	if int64(nbytes) >= DecoderMaxMsgSizeBytes {
 		dec.err = errBadCount
 		return false
 	}
+
 	dec.readMessage(int(nbytes))
 	return dec.err == nil
 }

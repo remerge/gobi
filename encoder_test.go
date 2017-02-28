@@ -1006,7 +1006,7 @@ func TestHugeWriteFails(t *testing.T) {
 		// Requires allocating a monster, so don't do this from all.bash.
 		t.Skip("skipping huge allocation in short mode")
 	}
-	huge := make([]byte, tooBig)
+	huge := make([]byte, 1<<30)
 	huge[0] = 7 // Make sure it's not all zeros.
 	buf := new(bytes.Buffer)
 	err := NewEncoder(buf).Encode(huge)

@@ -187,9 +187,11 @@ func (state *decoderState) decodeInt() int64 {
 // non-negative int and fit in the buffer.
 func (state *decoderState) getLength() (int, bool) {
 	n := int(state.decodeUint())
-	if n < 0 || state.b.Len() < n || tooBig <= n {
+
+	if n < 0 || state.b.Len() < n || DecoderMaxMsgSizeBytes <= int64(n) {
 		return 0, false
 	}
+
 	return n, true
 }
 
@@ -633,7 +635,7 @@ func (dec *Decoder) decodeSlice(state *decoderState, value reflect.Value, elemOp
 	nBytes := u * size
 	n := int(u)
 	// Take care with overflow in this calculation.
-	if n < 0 || uint64(n) != u || nBytes > tooBig || (size > 0 && nBytes/size != u) {
+	if n < 0 || uint64(n) != u || int64(nBytes) > DecoderMaxMsgSizeBytes || (size > 0 && nBytes/size != u) {
 		// We don't check n against buffer length here because if it's a slice
 		// of interfaces, there will be buffer reloads.
 		errorf("%s slice too big: %d elements of %d bytes", typ.Elem(), u, size)
