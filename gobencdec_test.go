@@ -548,7 +548,7 @@ func TestGobEncoderFieldTypeError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected decode error for mismatched fields (encoder to non-decoder)")
 	}
-	if strings.Index(err.Error(), "type") < 0 {
+	if !strings.Contains(err.Error(), "type") {
 		t.Fatal("expected type error; got", err)
 	}
 	// Non-encoder to GobDecoder: error
@@ -562,7 +562,7 @@ func TestGobEncoderFieldTypeError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected decode error for mismatched fields (non-encoder to decoder)")
 	}
-	if strings.Index(err.Error(), "type") < 0 {
+	if !strings.Contains(err.Error(), "type") {
 		t.Fatal("expected type error; got", err)
 	}
 }
@@ -746,7 +746,7 @@ func (i *isZeroBugInterface) GobDecode(data []byte) error {
 }
 
 func TestGobEncodeIsZero(t *testing.T) {
-	x := isZeroBug{time.Now(), "hello", -55, isZeroBugArray{1, 2}, isZeroBugInterface{}}
+	x := isZeroBug{time.Unix(1e9, 0), "hello", -55, isZeroBugArray{1, 2}, isZeroBugInterface{}}
 	b := new(bytes.Buffer)
 	enc := NewEncoder(b)
 	err := enc.Encode(x)
