@@ -117,6 +117,32 @@ func TestPointerStructRemovedFieldPointer(t *testing.T) {
 	}
 }
 
+type M4 struct {
+	X *int
+}
+
+func TestPointerStructRemovedFieldAndType(t *testing.T) {
+	var t0 M0
+	i := 777
+	t0.A = &M1{SomeInt: 9999}
+	t0.B = t0.A
+	t0.C = t0.A
+	t0.X = &i
+	t0.Y = &i
+	t0.Z = &i
+	b := new(bytes.Buffer)
+	NewEncoder(b).Encode(t0)
+	dec := NewDecoder(b)
+	var t1 M4
+	err := dec.Decode(&t1)
+	if err != nil {
+		t.Error("error: ", err)
+	}
+	if *t1.X != i {
+		t.Error("should be equal")
+	}
+}
+
 type PointerArray struct {
 	Array []*M1
 }
