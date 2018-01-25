@@ -1121,6 +1121,24 @@ func (dec *Decoder) compileDec(remoteId typeId, ut *userTypeInfo) (engine *decEn
 	engine = new(decEngine)
 	engine.instr = make([]decInstr, len(wireStruct.Field))
 	seen := make(map[reflect.Type]*decOp)
+
+	// We always encode the pointer address, but we only encode the
+	// value for the first occurrence. If the field referencing the
+	// first occurrence is removed, we need to ensure we still decode
+	// the value. In order to generate a valid decode op for these values,
+	// we need to map wire types to concrete fields.
+	pointerWireTypeMap := map[*wireType]reflect.StructField{}
+	for fieldnum := 0; fieldnum < len(wireStruct.Field); fieldnum++ {
+		wireField := wireStruct.Field[fieldnum]
+		if wireField.Name == "" {
+			errorf("empty name for remote field of type %s", wireStruct.Name)
+		}
+		localField, present := srt.FieldByName(wireField.Name)
+		if present && localField.Type.Kind() == reflect.Ptr {
+			pointerWireTypeMap[dec.wireType[wireField.Id]] = localField
+		}
+	}
+
 	// Loop over the fields of the wire type.
 	for fieldnum := 0; fieldnum < len(wireStruct.Field); fieldnum++ {
 		wireField := wireStruct.Field[fieldnum]
@@ -1132,9 +1150,13 @@ func (dec *Decoder) compileDec(remoteId typeId, ut *userTypeInfo) (engine *decEn
 		localField, present := srt.FieldByName(wireField.Name)
 		// TODO(r): anonymous names
 		if !present || !isExported(wireField.Name) {
-			op := dec.decIgnoreOpFor(wireField.Id, make(map[typeId]*decOp))
-			engine.instr[fieldnum] = decInstr{*op, fieldnum, nil, ovfl}
-			continue
+			var ok bool
+			localField, ok = pointerWireTypeMap[dec.wireType[wireField.Id]]
+			if !ok {
+				op := dec.decIgnoreOpFor(wireField.Id, make(map[typeId]*decOp))
+				engine.instr[fieldnum] = decInstr{*op, fieldnum, nil, ovfl}
+				continue
+			}
 		}
 		if !dec.compatibleType(localField.Type, wireField.Id, make(map[reflect.Type]typeId)) {
 			errorf("wrong type (%s) for received field %s.%s", localField.Type, wireStruct.Name, wireField.Name)

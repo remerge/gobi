@@ -12,8 +12,10 @@ type M1 struct {
 type M0 struct {
 	A *M1
 	B *M1
+	C *M1
 	X *int
 	Y *int
+	Z *int
 }
 
 func TestPointerStruct(t *testing.T) {
@@ -31,14 +33,53 @@ func TestPointerStruct(t *testing.T) {
 	if err != nil {
 		t.Error("error: ", err)
 	}
-	if t0.X != t0.Y {
+	if t1.X != t1.Y {
 		t.Error("should be equal")
 	}
-	if t0.A != t0.B {
+	if t1.A != t1.B {
 		t.Error("should be equal")
 	}
-	t0.A.SomeInt = 20
-	if t0.B.SomeInt != 20 {
+	t1.A.SomeInt = 20
+	if t1.B.SomeInt != 20 {
+		t.Error("ref error")
+	}
+}
+
+type M2 struct {
+	B *M1
+	C *M1
+	Y *int
+	Z *int
+}
+
+func TestPointerStructRemovedFields(t *testing.T) {
+	var t0 M0
+	i := 777
+	t0.A = &M1{SomeInt: 9999}
+	t0.B = t0.A
+	t0.C = t0.A
+	t0.X = &i
+	t0.Y = &i
+	t0.Z = &i
+	b := new(bytes.Buffer)
+	NewEncoder(b).Encode(t0)
+	dec := NewDecoder(b)
+	var t1 M2
+	err := dec.Decode(&t1)
+	if err != nil {
+		t.Error("error: ", err)
+	}
+	if *t1.Y != i {
+		t.Error("should be equal")
+	}
+	if t1.Y != t1.Z {
+		t.Error("should be equal")
+	}
+	if t1.B == nil {
+		t.Fatal("should not be nil")
+	}
+	t1.B.SomeInt = 20
+	if t1.C.SomeInt != 20 {
 		t.Error("ref error")
 	}
 }
