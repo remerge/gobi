@@ -52,7 +52,7 @@ type M2 struct {
 	Z *int
 }
 
-func TestPointerStructRemovedFields(t *testing.T) {
+func TestPointerStructRemovedField(t *testing.T) {
 	var t0 M0
 	i := 777
 	t0.A = &M1{SomeInt: 9999}
@@ -81,6 +81,39 @@ func TestPointerStructRemovedFields(t *testing.T) {
 	t1.B.SomeInt = 20
 	if t1.C.SomeInt != 20 {
 		t.Error("ref error")
+	}
+}
+
+type M3 struct {
+	A *M1
+	X *int
+}
+
+func TestPointerStructRemovedFieldPointer(t *testing.T) {
+	var t0 M0
+	i := 777
+	t0.A = &M1{SomeInt: 9999}
+	t0.B = t0.A
+	t0.C = t0.A
+	t0.X = &i
+	t0.Y = &i
+	t0.Z = &i
+	b := new(bytes.Buffer)
+	NewEncoder(b).Encode(t0)
+	dec := NewDecoder(b)
+	var t1 M3
+	err := dec.Decode(&t1)
+	if err != nil {
+		t.Error("error: ", err)
+	}
+	if t1.A == nil {
+		t.Fatal("should not be nil")
+	}
+	if t1.A.SomeInt != t0.A.SomeInt {
+		t.Fatal("should be equal")
+	}
+	if *t1.X != i {
+		t.Error("should be equal")
 	}
 }
 

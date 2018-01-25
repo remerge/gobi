@@ -407,6 +407,7 @@ func (s *sliceType) string() string { return s.safeString(make(map[typeId]bool))
 type fieldType struct {
 	Name string
 	Id   typeId
+	Ptr  bool
 }
 
 type structType struct {
@@ -554,7 +555,7 @@ func newTypeObject(name string, ut *userTypeInfo, rt reflect.Type) (gobType, err
 			if gt.id() == 0 {
 				setTypeId(gt)
 			}
-			st.Field = append(st.Field, &fieldType{f.Name, gt.id()})
+			st.Field = append(st.Field, &fieldType{f.Name, gt.id(), f.Type.Kind() == reflect.Ptr})
 		}
 		return st, nil
 

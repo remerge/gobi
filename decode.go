@@ -1145,22 +1145,34 @@ func (dec *Decoder) compileDec(remoteId typeId, ut *userTypeInfo) (engine *decEn
 		if wireField.Name == "" {
 			errorf("empty name for remote field of type %s", wireStruct.Name)
 		}
+		wireForField := dec.wireType[wireField.Id]
 		ovfl := overflow(wireField.Name)
 		// Find the field of the local type with the same name.
 		localField, present := srt.FieldByName(wireField.Name)
 		// TODO(r): anonymous names
 		if !present || !isExported(wireField.Name) {
-			var ok bool
-			localField, ok = pointerWireTypeMap[dec.wireType[wireField.Id]]
-			if !ok {
-				op := dec.decIgnoreOpFor(wireField.Id, make(map[typeId]*decOp))
-				engine.instr[fieldnum] = decInstr{*op, fieldnum, nil, ovfl}
+			localField, present = pointerWireTypeMap[wireForField]
+			if !present {
+				var op decOp
+				// If the field is a pointer, we can assume the value has already been
+				// decoded. Therefore, we can simply decode and throw away the
+				// pointer address.
+				if wireField.Ptr {
+					op = func(i *decInstr, state *decoderState, value reflect.Value) {
+						state.decodeUint()
+					}
+				} else {
+					op = *dec.decIgnoreOpFor(wireField.Id, make(map[typeId]*decOp))
+				}
+				engine.instr[fieldnum] = decInstr{op, fieldnum, nil, ovfl}
 				continue
 			}
 		}
 		if !dec.compatibleType(localField.Type, wireField.Id, make(map[reflect.Type]typeId)) {
 			errorf("wrong type (%s) for received field %s.%s", localField.Type, wireStruct.Name, wireField.Name)
 		}
+		// Ensure we only decode pointer values once
+		delete(pointerWireTypeMap, wireForField)
 		op := dec.decOpFor(wireField.Id, localField.Type, localField.Name, seen)
 		engine.instr[fieldnum] = decInstr{*op, fieldnum, localField.Index, ovfl}
 		engine.numInstr++
