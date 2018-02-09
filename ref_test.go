@@ -43,6 +43,63 @@ func TestPointerStruct(t *testing.T) {
 	}
 }
 
+type M0D struct {
+	A *M1 `gobi:"deprecated"`
+	B *M1
+	X *int
+	Y *int
+}
+
+type M0D0 struct {
+	B *M1
+	X *int
+	Y *int
+}
+
+func TestPointerStructDeprecatedField(t *testing.T) {
+	var t0 M0D
+	i := 777
+	t0.A = &M1{SomeInt: 9999}
+	t0.B = t0.A
+	t0.X = &i
+	t0.Y = &i
+	b := new(bytes.Buffer)
+	NewEncoder(b).Encode(t0)
+	var t1 M0D
+	err := NewDecoder(b).Decode(&t1)
+	if err != nil {
+		t.Fatal("error: ", err)
+	}
+	if t1.X != t1.Y {
+		t.Fatal("should be equal")
+	}
+	if t1.A != nil {
+		t.Fatal("should be nil")
+	}
+	if t1.B == nil {
+		t.Fatal("should not be nil")
+	}
+	if t1.B.SomeInt != 9999 {
+		t.Fatal("ref error")
+	}
+	b = new(bytes.Buffer)
+	NewEncoder(b).Encode(t1)
+	var t2 M0D0
+	err = NewDecoder(b).Decode(&t2)
+	if err != nil {
+		t.Fatal("error: ", err)
+	}
+	if t2.X != t2.Y {
+		t.Fatal("should be equal")
+	}
+	if t2.B == nil {
+		t.Fatal("should not be nil")
+	}
+	if t2.B.SomeInt != 9999 {
+		t.Fatal("ref error")
+	}
+}
+
 type PointerArray struct {
 	Array []*M1
 }

@@ -16,6 +16,11 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	tagName       = "gobi"
+	tagDeprecated = "deprecated"
+)
+
 // userTypeInfo stores the information associated with a type the user has handed
 // to the package.  It's computed once and stored in a map keyed by reflection
 // type.
@@ -563,6 +568,15 @@ func newTypeObject(name string, ut *userTypeInfo, rt reflect.Type) (gobType, err
 	}
 }
 
+// isDeprecated reports whether this is a deprecated field, and thus should
+// not be included during encoding.
+func isDeprecated(field *reflect.StructField) bool {
+	if t, ok := field.Tag.Lookup(tagName); ok {
+		return t == tagDeprecated
+	}
+	return false
+}
+
 // isExported reports whether this is an exported - upper case - name.
 func isExported(name string) bool {
 	rune, _ := utf8.DecodeRuneInString(name)
@@ -573,7 +587,7 @@ func isExported(name string) bool {
 // It will be transmitted only if it is exported and not a chan or func field
 // or pointer to chan or func.
 func isSent(field *reflect.StructField) bool {
-	if !isExported(field.Name) {
+	if !isExported(field.Name) || isDeprecated(field) {
 		return false
 	}
 	// If the field is a chan or func or pointer thereto, don't send it.
