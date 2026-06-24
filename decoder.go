@@ -32,6 +32,11 @@ type Decoder struct {
 	err          error
 	identity     map[uint64]reflect.Value
 	SizeGauge    metrics.Gauge
+
+	// StreamDecode, when set, decodes each message straight from the reader
+	// instead of buffering the whole message in memory first. This lowers peak
+	// memory for very large messages at the cost of more, smaller reads.
+	StreamDecode bool
 }
 
 // NewDecoder returns a new decoder that reads from the io.Reader.
@@ -111,6 +116,13 @@ func (dec *Decoder) readMessage(nbytes int) {
 	if dec.buf.Len() != 0 {
 		// The buffer should always be empty now.
 		panic("non-empty decoder buffer")
+	}
+	// Streaming: skip the up-front allocation and read of the whole message;
+	// point the buffer at the reader and let decode pull bytes on demand.
+	if dec.StreamDecode {
+		dec.buf.src = dec.r
+		dec.buf.remaining = nbytes
+		return
 	}
 	// Read the data
 	dec.buf.Size(nbytes)
