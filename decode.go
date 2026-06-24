@@ -39,9 +39,33 @@ type decoderState struct {
 type decBuffer struct {
 	data   []byte
 	offset int // Read offset.
+
+	// Streaming mode (enabled when Decoder.StreamDecode is set): instead of
+	// holding the whole message in data, read it on demand from src and track
+	// how many bytes of the current message are still unread in remaining.
+	src       io.Reader
+	remaining int
+	scratch   [1]byte // single-byte buffer for ReadByte in streaming mode
 }
 
 func (d *decBuffer) Read(p []byte) (int, error) {
+	// Streaming: pull bytes straight from the reader, bounded by what's left
+	// in the current message.
+	if d.src != nil {
+		n := len(p)
+		if n > d.remaining {
+			n = d.remaining
+		}
+		if n == 0 {
+			if len(p) != 0 {
+				return 0, io.EOF
+			}
+			return 0, nil
+		}
+		rn, err := io.ReadFull(d.src, p[:n])
+		d.remaining -= rn
+		return rn, err
+	}
 	n := copy(p, d.data[d.offset:])
 	if n == 0 && len(p) != 0 {
 		return 0, io.EOF
@@ -51,6 +75,20 @@ func (d *decBuffer) Read(p []byte) (int, error) {
 }
 
 func (d *decBuffer) Drop(n int) {
+	// Streaming: discard skipped bytes from the reader. Decode uses
+	// panic/recover for errors, so surface a read failure the same way.
+	if d.src != nil {
+		if n > d.remaining {
+			panic("drop")
+		}
+		// Use error_ (not a bare panic) so a read failure is caught by
+		// catchError and returned as dec.err rather than crashing.
+		if _, err := io.CopyN(io.Discard, d.src, int64(n)); err != nil {
+			error_(err)
+		}
+		d.remaining -= n
+		return
+	}
 	if n > d.Len() {
 		panic("drop")
 	}
@@ -69,6 +107,17 @@ func (d *decBuffer) Size(n int) {
 }
 
 func (d *decBuffer) ReadByte() (byte, error) {
+	// Streaming: read one byte from the reader.
+	if d.src != nil {
+		if d.remaining <= 0 {
+			return 0, io.EOF
+		}
+		if _, err := io.ReadFull(d.src, d.scratch[:]); err != nil {
+			return 0, err
+		}
+		d.remaining--
+		return d.scratch[0], nil
+	}
 	if d.offset >= len(d.data) {
 		return 0, io.EOF
 	}
@@ -78,6 +127,11 @@ func (d *decBuffer) ReadByte() (byte, error) {
 }
 
 func (d *decBuffer) Len() int {
+	// Streaming: Len reports bytes left in the current message, preserving the
+	// message-boundary checks the decoder relies on.
+	if d.src != nil {
+		return d.remaining
+	}
 	return len(d.data) - d.offset
 }
 
@@ -88,6 +142,10 @@ func (d *decBuffer) Bytes() []byte {
 func (d *decBuffer) Reset() {
 	d.data = d.data[0:0]
 	d.offset = 0
+	// Clear any streaming state so a fresh Decode starts clean; readMessage
+	// re-arms src/remaining per message when streaming.
+	d.src = nil
+	d.remaining = 0
 }
 
 // We pass the bytes.Buffer separately for easier testing of the infrastructure
