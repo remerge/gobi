@@ -1,7 +1,5 @@
 module github.com/remerge/gobi
 
-go 1.21
-
-toolchain go1.26.10
+go 1.27.3
 
 require github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
